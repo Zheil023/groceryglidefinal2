@@ -1,39 +1,42 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '@/config/firebaseconfig';
+import { db, auth } from '@/config/firebaseconfig';
 
 export default function ItemListCollection({ product, onAdd }) {
   const [itemAdded, setItemAdded] = useState(false); // State to control the prompt
+  const userId = auth.currentUser?.uid; // Get the current user's UID
 
   const handleAdd = async (product) => {
     try {
-      // Add the product to the "SelectedItems" collection
-      const docRef = await addDoc(collection(db, 'SelectedItems'), {
-        name: product.name,
-        category: product.category,
-        imageUrl: product.imageUrl,
-        addedAt: new Date(),
-      });
-      console.log('Item added to Firestore:', product.name);
+      if (userId) {
+        // Add the product to the "SelectedItems" collection with the user's UID
+        const docRef = await addDoc(collection(db, 'SelectedItems'), {
+          name: product.name,
+          category: product.category,
+          imageUrl: product.imageUrl,
+          addedAt: new Date(),
+          userId: userId, // Add the user ID
+        });
+        console.log('Item added to Firestore:', product.name);
 
-      // Call the onAdd function to update local state
-      onAdd({
-        id: docRef.id,
-        name: product.name,
-        category: product.category,
-        imageUrl: product.imageUrl,
-        quantity: 1,
-      });
+        // Call the onAdd function to update local state
+        onAdd({
+          id: docRef.id,
+          name: product.name,
+          category: product.category,
+          imageUrl: product.imageUrl,
+          quantity: 1,
+        });
 
-      // Show the "Item added" prompt
-      setItemAdded(true);
+        // Show the "Item added" prompt
+        setItemAdded(true);
 
-      // Hide the prompt after 1 second
-      setTimeout(() => {
-        setItemAdded(false);
-      }, 1000);
-      
+        // Hide the prompt after 1 second
+        setTimeout(() => {
+          setItemAdded(false);
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error adding item to Firestore:', error);
     }
@@ -41,16 +44,12 @@ export default function ItemListCollection({ product, onAdd }) {
 
   return (
     <View style={styles.container}>
-      <Image
-        source={{ uri: product?.imageUrl }}
-        style={styles.image}
-      />
+      <Image source={{ uri: product?.imageUrl }} style={styles.image} />
       <Text style={styles.name}>{product.name}</Text>
       <TouchableOpacity style={styles.button} onPress={() => handleAdd(product)}>
         <Text style={styles.buttonText}>Add</Text>
       </TouchableOpacity>
 
-      {/* "Item added" prompt */}
       {itemAdded && (
         <Animated.View style={styles.promptContainer}>
           <Text style={styles.promptText}>Item added</Text>

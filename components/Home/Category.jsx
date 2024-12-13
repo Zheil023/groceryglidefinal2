@@ -6,7 +6,7 @@ import ItemListCollection from './ItemListCollection';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/config/firebaseconfig';
 
-export default function Category({ category, navigation }) { // Add navigation prop here
+export default function Category({ category = () => {} }) {
   const [categoryList, setCategoryList] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('Canned');
   const [showModal, setShowModal] = useState(false);
@@ -31,7 +31,7 @@ export default function Category({ category, navigation }) { // Add navigation p
   const handleCategoryClick = (itemName) => {
     setSelectedCategory(itemName);
     setShowModal(true);
-    category(itemName); // Send selected category to parent
+    category(itemName); // Safe usage with fallback
     GetItemList(itemName);
   };
 
@@ -59,12 +59,9 @@ export default function Category({ category, navigation }) { // Add navigation p
     setSelectedItems((prevItems) => [...prevItems, item]);
   };
 
-  
-  
   return (
     <View style={styles.categoryWrapper}>
       <Text style={styles.categoryText}>Category</Text>
-
       <View style={styles.categoryContainer}>
         {categoryList.map((item) => (
           <TouchableOpacity
@@ -87,7 +84,6 @@ export default function Category({ category, navigation }) { // Add navigation p
           </TouchableOpacity>
         ))}
       </View>
-
       <Modal
         visible={showModal}
         animationType="slide"
@@ -97,15 +93,12 @@ export default function Category({ category, navigation }) { // Add navigation p
         <View style={styles.modalBackdrop}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>{selectedCategory} Items</Text>
-
-            {/* Search Bar */}
             <TextInput
               style={styles.searchBar}
               placeholder="Search items..."
               value={searchTerm}
               onChangeText={handleSearch}
             />
-
             <ScrollView style={styles.itemListContainer}>
               {filteredItems.length === 0 ? (
                 <Text>No items available in this category</Text>
@@ -121,7 +114,6 @@ export default function Category({ category, navigation }) { // Add navigation p
                 </View>
               )}
             </ScrollView>
-
             <TouchableOpacity
               onPress={() => setShowModal(false)}
               style={styles.closeButton}
@@ -131,91 +123,91 @@ export default function Category({ category, navigation }) { // Add navigation p
           </View>
         </View>
       </Modal>
-
-      
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   categoryWrapper: {
-    marginTop: 20,
-    paddingHorizontal: 10,
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f8f8f8',
+  },
+  categoryText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 20,
   },
   categoryContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  categoryImage: {
-    marginTop: 20,
-    width: 70,
-    height: 70,
-  },
-  categoryText: {
-    fontSize: 30,
-    fontWeight: 'bold',
-  },
   categoryItem: {
-    width: '30%',
-    marginBottom: 15,
+    width: '48%',
+    marginBottom: 20,
   },
   container: {
-    backgroundColor: '#F3D0D7',
-    padding: 15,
+    borderRadius: 10,
+    backgroundColor: '#e0e0e0',
+    padding: 10,
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 15,
-    borderColor: '#F3D0D7',
-    justifyContent: 'center',
+  },
+  selectedCategoryContainer: {
+    borderWidth: 2,
+    borderColor: '#007bff',
+  },
+  categoryImage: {
+    width: 80,
+    height: 80,
+    resizeMode: 'cover',
   },
   itemName: {
     textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  selectedCategoryContainer: {
-    backgroundColor: 'lightblue',
-    borderColor: 'lightblue',
+    marginTop: 10,
+    fontSize: 16,
   },
   modalBackdrop: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContainer: {
-    backgroundColor: 'white',
-    padding: 20,
+    width: '90%',
+    backgroundColor: '#fff',
     borderRadius: 10,
-    width: '80%',
-    maxHeight: '80%',
+    padding: 20,
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   searchBar: {
-    backgroundColor: '#f2f2f2',
-    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
     padding: 10,
     marginBottom: 10,
+  },
+  itemListContainer: {
+    maxHeight: 300,
+    marginBottom: 20,
   },
   gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-evenly',
+    justifyContent: 'space-between',
   },
   closeButton: {
-    backgroundColor: '#a62639',
+    backgroundColor: '#007bff',
     padding: 10,
     borderRadius: 5,
-    marginTop: 15,
     alignItems: 'center',
   },
   closeButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontWeight: 'bold',
   },
-  
 });

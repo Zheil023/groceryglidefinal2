@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, ScrollView, StyleSheet } from 'react-native';
 import Slider from '../../components/Home/Slider'; 
-import ItemsByCategory from '../../components/Home/ItemsByCategory';
+import Category from '../../components/Home/Category';
 
 export default function HomeScreen() {
   return (
@@ -10,7 +10,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.contentContainer}
     >
       <Slider /> 
-      <ItemsByCategory />
+      <Category />
     </ScrollView>
   );
 }

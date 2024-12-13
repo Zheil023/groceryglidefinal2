@@ -13,7 +13,7 @@ export default function Signup() {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       alert('Account created successfully!');
-      navigation.replace('Index'); // Redirect to login screen
+      navigation.replace('index'); // Redirect to login screen
     } catch (error) {
       alert(error.message);
     }

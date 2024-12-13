@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
-import { collection, query, onSnapshot, deleteDoc, doc, updateDoc, getDocs } from 'firebase/firestore';
-import { db } from '@/config/firebaseconfig';
+import { collection, query, onSnapshot, deleteDoc, doc, updateDoc, getDocs, where } from 'firebase/firestore';
+import { db, auth } from '@/config/firebaseconfig'; // Make sure you're importing auth
 import { useNavigation } from '@react-navigation/native';
 
 interface SelectedItem {
@@ -16,44 +16,47 @@ export default function ListScreen() {
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const navigation = useNavigation();
 
-  // Fetch selected items from Firestore in real-time
+  const userId = auth.currentUser?.uid; // Get the current user's UID
+
+  // Fetch selected items for the current user from Firestore in real-time
   const fetchSelectedItems = () => {
-    const q = query(collection(db, 'SelectedItems'));
-    
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const items = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        name: doc.data().name,
-        category: doc.data().category,
-        quantity: doc.data().quantity || 1,
-      }));
+    if (userId) {
+      const q = query(collection(db, 'SelectedItems'), where('userId', '==', userId));
 
-      console.log("Fetched items:", items); // Log to verify data
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        const items = querySnapshot.docs.map((doc) => ({
+          id: doc.id,
+          name: doc.data().name,
+          category: doc.data().category,
+          quantity: doc.data().quantity || 1,
+        }));
 
-      // Aggregate items with the same name
-      const aggregatedItems = items.reduce((acc, item) => {
-        if (acc[item.name]) {
-          acc[item.name].quantity += 1;
-        } else {
-          acc[item.name] = { ...item, quantity: 1 };
-        }
-        return acc;
-      }, {} as { [key: string]: SelectedItem });
+        console.log("Fetched items:", items);
 
-      setSelectedItems(Object.values(aggregatedItems)); // Set the aggregated items to state
-    });
+        const aggregatedItems = items.reduce((acc, item) => {
+          if (acc[item.name]) {
+            acc[item.name].quantity += 1;
+          } else {
+            acc[item.name] = { ...item, quantity: 1 };
+          }
+          return acc;
+        }, {} as { [key: string]: SelectedItem });
 
-    return () => unsubscribe();
+        setSelectedItems(Object.values(aggregatedItems)); // Set the aggregated items to state
+      });
+
+      return () => unsubscribe();
+    }
   };
 
   useEffect(() => {
     const unsubscribe = fetchSelectedItems();
     return () => unsubscribe();
-  }, []);
+  }, [userId]);
 
   const handleStartNavigation = () => {
     Alert.alert(
-      "Start Navigation", 
+      "Start Navigation",
       "Are you sure you want to start navigation?",
       [
         {
@@ -64,7 +67,6 @@ export default function ListScreen() {
         {
           text: "Yes",
           onPress: () => {
-            // Pass selected categories to the map screen
             const selectedCategories = [...new Set(selectedItems.map(item => item.category))];
             navigation.navigate('map', { selectedCategories });
           },
@@ -76,7 +78,6 @@ export default function ListScreen() {
 
   const handleRemoveItem = async (itemId: string, itemName: string, quantity: number) => {
     if (quantity > 1) {
-      // If more than one item, update the quantity
       await updateDoc(doc(db, 'SelectedItems', itemId), {
         quantity: quantity - 1,
       });
@@ -89,28 +90,23 @@ export default function ListScreen() {
       );
       Alert.alert("Item Removed", `${itemName} has been removed from your list.`);
     } else {
-      // If quantity is 1, remove the item completely
       await deleteDoc(doc(db, 'SelectedItems', itemId));
       setSelectedItems((prevItems) => prevItems.filter((item) => item.id !== itemId));
       Alert.alert("Item Removed", `${itemName} has been removed from your list.`);
     }
   };
 
-  // Function to remove all items from the list
   const handleRemoveAllItems = async () => {
     try {
-      // Get all selected items from Firestore
-      const selectedItemsRef = collection(db, 'SelectedItems');
-      const snapshot = await getDocs(selectedItemsRef); // Fetch all documents in the collection
-
-      // Delete all documents
-      snapshot.forEach(async (docSnapshot) => {
-        await deleteDoc(doc(db, 'SelectedItems', docSnapshot.id)); // Delete each document
-      });
-
-      // Clear the selected items from local state
-      setSelectedItems([]);
-      Alert.alert('All items removed', 'All selected items have been removed from your list.');
+      if (userId) {
+        const selectedItemsRef = collection(db, 'SelectedItems');
+        const snapshot = await getDocs(query(selectedItemsRef, where('userId', '==', userId)));
+        snapshot.forEach(async (docSnapshot) => {
+          await deleteDoc(doc(db, 'SelectedItems', docSnapshot.id));
+        });
+        setSelectedItems([]);
+        Alert.alert('All items removed', 'All selected items have been removed from your list.');
+      }
     } catch (error) {
       console.error('Error removing all items:', error);
       Alert.alert('Error', 'An error occurred while removing all items.');
@@ -137,8 +133,7 @@ export default function ListScreen() {
           </View>
         )}
       />
-      
-      {/* Button to remove all items */}
+
       <TouchableOpacity onPress={handleRemoveAllItems} style={styles.button}>
         <Text style={styles.buttonText}>Remove All Items</Text>
       </TouchableOpacity>

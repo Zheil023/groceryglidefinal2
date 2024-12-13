@@ -15,13 +15,19 @@ export default function Slider() {
     // Only start auto-scrolling if the sliderList has items
     if (sliderList.length > 0) {
       const interval = setInterval(() => {
-        if (flatListRef.current && sliderList.length > 0) {
-          flatListRef.current.scrollToOffset({
-            offset:
-              (flatListRef.current.contentOffset.x + Dimensions.get('screen').width * 0.9 + 15) %
-              (sliderList.length * (Dimensions.get('screen').width * 0.9 + 15)),
-            animated: true,
-          });
+        if (flatListRef.current && flatListRef.current.contentOffset) {
+          const contentOffsetX = flatListRef.current.contentOffset.x;
+
+          if (contentOffsetX !== undefined) {
+            const nextOffset =
+              (contentOffsetX + Dimensions.get('screen').width * 0.9 + 15) % 
+              (sliderList.length * (Dimensions.get('screen').width * 0.9 + 15));
+
+            flatListRef.current.scrollToOffset({
+              offset: nextOffset,
+              animated: true,
+            });
+          }
         }
       }, 3000);  // Scroll every 3 seconds
       
